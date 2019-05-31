@@ -1,6 +1,6 @@
 name: pusher_dart
 description: Unofficial pusher client for dart
-version: 0.0.1
+version: 0.1.0
 author: "Prabhakar Bhat <prabhakarbhat@live.com>"
 homepage: https://github.com/jaysson/pusher_dart
 
