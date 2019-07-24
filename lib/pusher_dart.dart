@@ -8,29 +8,46 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+/// Class to hold headers to send to authentication endpoint
+/// Ex. `PusherAuth(headers: {'Authorization': 'Bearer $token'})`
 @immutable
 class PusherAuth {
+  /// HTTP Headers
+  /// Ex. `{'Authorization': 'Bearer $token'}`
   final Map<String, String> headers;
 
+  /// Default constructor
   PusherAuth({this.headers});
 }
 
+/// Class to hold pusher configuration
+/// Ex. `PusherOptions({authEndpoint: 'https://domain.com/auth', cluster: 'ap2', auth:  })`
 @immutable
 class PusherOptions {
+  /// A URL string to send the authentication request to
   final String authEndpoint;
   final PusherAuth auth;
+
+  /// Pusher cluster
+  /// @see https://pusher.com/docs/channels/miscellaneous/clusters
   final String cluster;
 
+  /// Default constructor
   PusherOptions({this.authEndpoint, this.auth, this.cluster = 'ap2'});
 }
 
+/// A channel
 class Channel with _EventEmitter {
+  /// Channel name
+  /// Ex. `private-Customer.1`
   final String name;
   String _data;
   Connection _connection;
 
+  /// Default constructor
   Channel(this.name, this._connection, [String _data]);
 
+  /// @see https://pusher.com/docs/channels/getting_started/javascript#listen-for-events-on-your-channel
   bool trigger(String eventName, Object data) {
     try {
       _connection.webSocketChannel.sink
@@ -41,6 +58,8 @@ class Channel with _EventEmitter {
     }
   }
 
+  /// Subscribes to the channel
+  /// If it is a private channel, authenticates using provided details
   Future<bool> connect() async {
     String auth;
     if (name.startsWith('private-') || name.startsWith('presence-')) {
@@ -74,15 +93,23 @@ mixin _EventEmitter {
   }
 }
 
+/// The main connection class for pusher
+/// It holds the state, reconnects if necessary, and forwards method calls
 class Connection with _EventEmitter {
+  /// @see https://pusher.com/docs/channels/using_channels/connection#available-states
   String state = 'initialized';
+
+  /// Socket ID provided by pusher
   String socketId;
+
+  /// Get the API key from pusher dashboard.
   String apiKey;
   PusherOptions options;
   int _retryIn = 1;
   IOWebSocketChannel webSocketChannel;
   final Map<String, Channel> channels = {};
 
+  /// Default constructor
   Connection(this.apiKey, this.options) {
     _connect();
   }
@@ -102,6 +129,7 @@ class Connection with _EventEmitter {
     }
   }
 
+  /// Authenticate a specific channel
   Future<String> authenticate(String channelName) async {
     if (socketId == null)
       throw WebSocketChannelException(
@@ -144,11 +172,13 @@ class Connection with _EventEmitter {
     }
   }
 
+  /// Disconnect from pusher
   Future disconnect() {
     state = 'disconnected';
     return webSocketChannel.sink.close();
   }
 
+  /// Subscribe to channel using channel name
   Channel subscribe(String channelName, [String data]) {
     final channel = Channel(channelName, this, data);
     channels[channelName] = channel;
@@ -164,6 +194,8 @@ class Connection with _EventEmitter {
     });
   }
 
+  /// Unsubscribe a channel using channel name
+  /// @see https://pusher.com/docs/channels/getting_started/javascript#subscribe-to-a-channel
   void unsubscribe(String channelName) {
     channels.remove(channelName);
     webSocketChannel.sink.add(jsonEncode({
@@ -173,7 +205,8 @@ class Connection with _EventEmitter {
   }
 
   void _handlePusherError(Map<String, Object> json) {
-    final int errorCode = json['code'];
+    final int errorCode =
+        json == null || json['code'] == null ? 1 : json['code'];
     if (errorCode >= 4200) {
       _connect();
     } else if (errorCode > 4100) {
@@ -183,28 +216,34 @@ class Connection with _EventEmitter {
 }
 
 class Pusher with _EventEmitter {
+  /// Log function called on all pusher actions
   static Function log = (Object message) {
     print('Pusher: $message');
   };
 
   Connection _connection;
 
+  /// Default constructor
   Pusher(String apiKey, PusherOptions options) {
     _connection = Connection(apiKey, options);
   }
 
+  /// Disconnect from pusher
   void disconnect() {
     _connection.disconnect();
   }
 
+  /// Get a channel using channel name
   Channel channel(String channelName) {
     return _connection.channels[channelName];
   }
 
+  /// Subscribe to a channel using channel name
   Channel subscribe(String channelName, [String data]) {
     return _connection.subscribe(channelName, data);
   }
 
+  /// Unsubscribe a channel using channel name
   void unsubscribe(String channelName) {
     _connection.unsubscribe(channelName);
   }

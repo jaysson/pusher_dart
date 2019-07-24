@@ -6,7 +6,7 @@ Using this package is similar to how one would use PusherJS.
 
 ### Initialize and connect
 ```dart
-import 'package:pusher_dart';
+import 'package:pusher_dart/pusher_dart.dart';
 
 final pusher = Pusher(
     DotEnv().env['PUSHER_APP_KEY'],
