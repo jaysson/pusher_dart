@@ -11,6 +11,8 @@ import 'package:pusher_dart/pusher_dart.dart';
 final pusher = Pusher(
     DotEnv().env['PUSHER_APP_KEY'],
     PusherOptions(
+        //host:'10.0.2.2',   //optional
+        //port:6001,        //optional
         authEndpoint: DotEnv().env['PUSHER_AUTH_URL'],
         auth: PusherAuth(headers: {
           'Authorization': 'Bearer $apiToken',

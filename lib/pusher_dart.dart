@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+
+
 /// Class to hold headers to send to authentication endpoint
 /// Ex. `PusherAuth(headers: {'Authorization': 'Bearer $token'})`
 @immutable
@@ -28,12 +30,25 @@ class PusherOptions {
   final String authEndpoint;
   final PusherAuth auth;
 
+  // for using a different host or port
+  final String host;
+  final int port;
+
+  //use wss or ws
+  final bool encrypted;
+
   /// Pusher cluster
   /// @see https://pusher.com/docs/channels/miscellaneous/clusters
   final String cluster;
 
   /// Default constructor
-  PusherOptions({this.authEndpoint, this.auth, this.cluster = 'ap2'});
+  PusherOptions(
+      {this.authEndpoint,
+      this.auth,
+      this.cluster = 'ap2',
+      this.host,
+      this.port = 443,
+      this.encrypted = true});
 }
 
 /// A channel
@@ -118,8 +133,16 @@ class Connection with _EventEmitter {
     try {
       state = 'connecting';
       _broadcast('connecting');
-      webSocketChannel = IOWebSocketChannel.connect(
-          'wss://ws-${options.cluster}.pusher.com:443/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
+
+      String protocol = options.encrypted ? 'wss://' : 'ws://';
+      String host = options.host ?? 'ws-${options.cluster}.pusher.com';
+
+      String domain = protocol + host + ":" + options.port.toString();
+      if (Pusher.log != null) Pusher.log('connecting to ' + domain);
+
+      webSocketChannel = IOWebSocketChannel.connect(domain +
+          '/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
+
       webSocketChannel.stream.listen(_handleMessage);
     } catch (e) {
       // Give up if we have to tray again after an hour
