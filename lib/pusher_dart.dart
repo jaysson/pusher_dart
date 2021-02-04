@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'web_socket/socket.dart';
+
 
 
 /// Class to hold headers to send to authentication endpoint
@@ -121,7 +123,7 @@ class Connection with _EventEmitter {
   String apiKey;
   PusherOptions options;
   int _retryIn = 1;
-  IOWebSocketChannel webSocketChannel;
+  WebSocketChannel webSocketChannel;
   final Map<String, Channel> channels = {};
 
   /// Default constructor
@@ -140,7 +142,7 @@ class Connection with _EventEmitter {
       String domain = protocol + host + ":" + options.port.toString();
       if (Pusher.log != null) Pusher.log('connecting to ' + domain);
 
-      webSocketChannel = IOWebSocketChannel.connect(domain +
+      webSocketChannel =connect(domain +
           '/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
 
       webSocketChannel.stream.listen(_handleMessage);

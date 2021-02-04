@@ -42,7 +42,9 @@ class _MyHomePageState extends State<MyHomePage> {
             'Authorization': 'Bearer token',
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-          })));
+          })
+          )
+          );
   Channel _channel;
 
   @override
