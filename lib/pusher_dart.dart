@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'web_socket/socket.dart';
+
 
 
 /// Class to hold headers to send to authentication endpoint
@@ -121,11 +123,12 @@ class Connection with _EventEmitter {
   String apiKey;
   PusherOptions options;
   int _retryIn = 1;
-  IOWebSocketChannel webSocketChannel;
+  WebSocketChannel webSocketChannel;
   final Map<String, Channel> channels = {};
+  final bool shouldLog;
 
   /// Default constructor
-  Connection(this.apiKey, this.options) {
+  Connection(this.apiKey, this.options, {this.shouldLog = false}) {
     _connect();
   }
 
@@ -138,9 +141,9 @@ class Connection with _EventEmitter {
       String host = options.host ?? 'ws-${options.cluster}.pusher.com';
 
       String domain = protocol + host + ":" + options.port.toString();
-      if (Pusher.log != null) Pusher.log('connecting to ' + domain);
+      if (shouldLog && Pusher.log != null) Pusher.log('connecting to ' + domain);
 
-      webSocketChannel = IOWebSocketChannel.connect(domain +
+      webSocketChannel =connect(domain +
           '/app/$apiKey?protocol=5&client=dart-libPusher&version=0.1.0');
 
       webSocketChannel.stream.listen(_handleMessage);
@@ -167,7 +170,7 @@ class Connection with _EventEmitter {
   }
 
   _handleMessage(Object message) {
-    if (Pusher.log != null) Pusher.log(message);
+    if (shouldLog && Pusher.log != null) Pusher.log(message);
     final json = Map<String, Object>.from(jsonDecode(message));
     final String eventName = json['event'];
     final data = json['data'];
@@ -247,8 +250,8 @@ class Pusher with _EventEmitter {
   Connection _connection;
 
   /// Default constructor
-  Pusher(String apiKey, PusherOptions options) {
-    _connection = Connection(apiKey, options);
+  Pusher(String apiKey, PusherOptions options, {bool shouldLog = false}) {
+    _connection = Connection(apiKey, options, shouldLog: shouldLog ?? false);
   }
 
   /// Disconnect from pusher
